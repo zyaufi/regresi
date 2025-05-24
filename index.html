@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kalkulator Regresi Lengkap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media (max-width: 768px) {
+            .mobile-padding {
+                padding: 10px;
+            }
+            .table-responsive {
+                font-size: 0.8em;
+            }
+            .result-item {
+                font-size: 0.85em;
+            }
+        }
+        
+        .result-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .data-input {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .data-input:focus {
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.25);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid mobile-padding">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="my-4">
+                    <h2 class="text-center mb-4 text-success">Kalkulator Regresi</h2>
+                    
+                    <!-- Kontrol Desimal -->
+                    <div class="row mb-3 g-2">
+                        <div class="col-12 col-sm-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-success text-white">Desimal</span>
+                                <input type="number" id="decimalDigits" 
+                                       class="form-control" 
+                                       min="0" max="10" 
+                                       value="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Data -->
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Data X (pisahkan dengan koma)</label>
+                                <input type="text" id="dataX" 
+                                       class="form-control data-input" 
+                                       placeholder="Contoh: 1,2,3,4,5">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Data Y (pisahkan dengan koma)</label>
+                                <input type="text" id="dataY" 
+                                       class="form-control data-input" 
+                                       placeholder="Contoh: 2,4,5,4,5">
+                            </div>
+                            <div class="h4 fw-bold text-danger">DISCLAIMER</div>
+                            <p class="h6"><mark> Desimal ditampilkan dengan koma(,)</mark></p>
+                            <p class="h6"><mark> Ribuan ditampilkan dengan titik(.)</mark></p>
+
+                            <button onclick="hitungRegresi()" 
+                                    class="btn btn-success w-100 py-2 fw-bold">
+                                Hitung Analisis
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hasil -->
+                    <div id="results" class="d-none">
+                        <div class="card result-card shadow">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3 text-success">Hasil Perhitungan</h5>
+                                
+                                <!-- Info Dasar -->
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6 col-md-4">
+                                        <div class="result-item bg-light p-2 rounded">
+                                            <small class="text-muted d-block">Jumlah Data</small>
+                                            <span id="nData" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="result-item bg-light p-2 rounded">
+                                            <small class="text-muted d-block">Rata-rata X</small>
+                                            <span id="meanX" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="result-item bg-light p-2 rounded">
+                                            <small class="text-muted d-block">Rata-rata Y</small>
+                                            <span id="meanY" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tabel -->
+                                <div class="mt-3">
+                                    <h6 class="fw-bold mb-2">Tabel Perhitungan</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead class="table-success">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>X</th>
+                                                    <th>Y</th>
+                                                    <th>X×Y</th>
+                                                    <th>X²</th>
+                                                    <th>Y²</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tableBody"></tbody>
+                                            <tfoot class="table-light">
+                                                <tr>
+                                                    <th>Σ</th>
+                                                    <td id="sumX"></td>
+                                                    <td id="sumY"></td>
+                                                    <td id="sumXY"></td>
+                                                    <td id="sumX2"></td>
+                                                    <td id="sumY2"></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Hasil Analisis -->
+                                <div class="row g-3 mt-3">
+                                    <!-- Kolom Kiri -->
+                                    <div class="col-12 col-md-6">
+                                        <div class="card border-success mb-3">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-success">Regresi Linear</h6>
+                                                <div class="result-item">
+                                                    <small>Slope (b):</small>
+                                                    <div id="koefisienB" class="fw-bold"></div>
+                                                </div>
+                                                <div class="result-item">
+                                                    <small>Konstanta (a):</small>
+                                                    <div id="konstantaA" class="fw-bold"></div>
+                                                </div>
+                                                <div class="result-item mt-2">
+                                                    <small>Persamaan:</small>
+                                                    <div id="regressionEquation" class="fw-bold text-success"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Kolom Kanan -->
+                                    <div class="col-12 col-md-6">
+                                        <div class="card border-success mb-3">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-success">Analisis Korelasi</h6>
+                                                <div class="result-item">
+                                                    <small>Koefisien Korelasi (r):</small>
+                                                    <div id="rValue" class="fw-bold"></div>
+                                                </div>
+                                                <div class="result-item">
+                                                    <small>Determinasi (R²):</small>
+                                                    <div id="rSquared" class="fw-bold"></div>
+                                                </div>
+                                                <div class="result-item">
+                                                    <small>Tingkat Korelasi:</small>
+                                                    <div id="tingkatKorelasi" class="fw-bold text-success"></div>
+                                                </div>
+                                                <div class="result-item">
+                                                    <small>Tingkat Determinasi:</small>
+                                                    <div id="tingkatDeterminasi" class="fw-bold text-success"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SS Values -->
+                                <div class="row g-2 mt-2">
+                                    <div class="col-6 col-md-4">
+                                        <div class="bg-light p-2 rounded">
+                                            <small class="text-muted d-block">SSxy</small>
+                                            <span id="SSxy" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="bg-light p-2 rounded">
+                                            <small class="text-muted d-block">SSxx</small>
+                                            <span id="SSxx" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="bg-light p-2 rounded">
+                                            <small class="text-muted d-block">SSyy</small>
+                                            <span id="SSyy" class="fw-bold"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
