@@ -36,7 +36,9 @@ document.addEventListener('DOMContentLoaded', function(){
             const sumXY = x.map((xi, i) => xi * y[i]).reduce((a, b) => a + b, 0);
             const sumX2 = x.map(xi => xi ** 2).reduce((a, b) => a + b, 0);
             const sumY2 = y.map(yi => yi ** 2).reduce((a, b) => a + b, 0);
+            let arahKorelasi;
 
+            // Update Tabel
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
             x.forEach((xi, i) => {
@@ -67,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function(){
             
             let r, rSquared, regressionEquation, a, b, tingkatKorelasi, tingkatDeterminasi;
             if (SSxx === 0 || SSyy === 0) {
-                [r, rSquared, regressionEquation, tingkatKorelasi, tingkatDeterminasi, a, b] = 
+                [r, rSquared, regressionEquation, tingkatKorelasi, tingkatDeterminasi, a, b, arahKorelasi] = 
                     Array(7).fill('Tidak dapat dihitung');
             } else {
                 b = SSxy / SSxx;
@@ -94,8 +96,12 @@ document.addEventListener('DOMContentLoaded', function(){
                     absR2 > 0.75 ? "Kuat" :
                     absR2 > 0.5 ? "Sedang" :
                     absR2 > 0.25 ? "Lemah" : "Sangat Lemah";
+
+                arahKorelasi = b >= 0 ? "Positif" : "Negatif";
+
             }
 
+            // Tampilkan Hasil
             document.getElementById('results').classList.remove('d-none');
             const updateField = (id, value) => 
                 document.getElementById(id).textContent = typeof value === 'number' ? 
@@ -111,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function(){
             updateField('rSquared', rSquared);
             updateField('koefisienB', b);
             updateField('konstantaA', a);
+            document.getElementById('arahKorelasi').textContent = arahKorelasi;
             document.getElementById('regressionEquation').textContent = regressionEquation;
             document.getElementById('tingkatKorelasi').textContent = tingkatKorelasi;
             document.getElementById('tingkatDeterminasi').textContent = tingkatDeterminasi;
