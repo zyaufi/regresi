@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Perbandingan Model Best Fit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .analysis-section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 800px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .result-table th {
+            background-color: #f8f9fa;
+            white-space: nowrap;
+        }
+        .scrollable-results {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <h2 class="text-center mb-4 text-primary">Perbandingan Model Best Fit</h2>
+
+        <!-- Section Perbandingan Model -->
+        <div class="analysis-section">
+            <h4 class="mb-4">📊 Bandingkan Dua Model</h4>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Data X (pisahkan dengan koma)</label>
+                    <input type="text" id="bestfitX" class="form-control" placeholder="Contoh: 1,2,3,4,5">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Data Y (pisahkan dengan koma)</label>
+                    <input type="text" id="bestfitY" class="form-control" placeholder="Contoh: 2,4,5,4,5">
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <input type="text" id="equation1" class="form-control" 
+                           placeholder="Persamaan 1 (contoh: y = 2 + 1.5x)">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" id="equation2" class="form-control" 
+                           placeholder="Persamaan 2 (contoh: y = 3 + 1x)">
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button class="btn btn-success btn-lg py-2" id="btnBestFit">
+                    ⚖️ Bandingkan Model
+                </button>
+            </div>
+
+            <div id="hasilBestFit" class="d-none scrollable-results mt-4">
+                <div class="card border-success mb-3">
+                    <div class="card-header bg-success text-white">Kesimpulan</div>
+                    <div class="card-body">
+                        <div class="alert alert-success mb-0" id="bestFitConclusion"></div>
+                    </div>
+                </div>
+
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">Detail Perhitungan</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered result-table">
+                                <thead>
+                                    <tr>
+                                        <th>X</th>
+                                        <th>Y Aktual</th>
+                                        <th>ŷ1</th>
+                                        <th>(y-ŷ1)²</th>
+                                        <th>ŷ2</th>
+                                        <th>(y-ŷ2)²</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bestFitTableBody"></tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="3">Total Residual</th>
+                                        <td id="totalRes1" class="fw-bold"></td>
+                                        <td colspan="1"></td>
+                                        <td id="totalRes2" class="fw-bold"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnBestFit').addEventListener('click', hitungBestFit);
+        });
+
+        function hitungBestFit() {
+            try {
+                const x = parseInput('bestfitX');
+                const y = parseInput('bestfitY');
+                const eq1 = parseEquation(document.getElementById('equation1').value);
+                const eq2 = parseEquation(document.getElementById('equation2').value);
+
+                validateData(x, y);
+
+                const decimals = 4; // Fixed decimal places
+                const {totalRes1, totalRes2, rows} = calculateResiduals(x, y, eq1, eq2, decimals);
+
+                updateHasilBestFit({rows, totalRes1, totalRes2, decimals});
+
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        function parseInput(id) {
+            return document.getElementById(id).value.split(',').map(Number);
+        }
+
+        function validateData(x, y) {
+            if (x.length !== y.length || x.length === 0) throw new Error("Data X dan Y harus sama dan tidak kosong!");
+            if (x.some(isNaN) || y.some(isNaN)) throw new Error("Data harus berupa angka!");
+        }
+
+        function parseEquation(equation) {
+            const cleaned = equation.replace(/\s/g, '').toLowerCase();
+            if (!cleaned.startsWith('y=')) throw new Error('Format persamaan tidak valid');
+            
+            const parts = cleaned.split('y=')[1].split(/[+-]/);
+            let intercept = 0;
+            let slope = 0;
+
+            parts.forEach(part => {
+                if (part.includes('x')) {
+                    const coeff = part.replace('x', '') || '1';
+                    slope += parseFloat(coeff);
+                } else {
+                    intercept += parseFloat(part) || 0;
+                }
+            });
+
+            return { intercept, slope };
+        }
+
+        function calculateResiduals(x, y, eq1, eq2, decimals) {
+            let totalRes1 = 0, totalRes2 = 0;
+            const rows = x.map((xi, i) => {
+                const yi = y[i];
+                const y1 = eq1.intercept + eq1.slope * xi;
+                const y2 = eq2.intercept + eq2.slope * xi;
+                const res1 = Math.pow(yi - y1, 2);
+                const res2 = Math.pow(yi - y2, 2);
+                
+                totalRes1 += res1;
+                totalRes2 += res2;
+
+                return `
+                    <tr>
+                        <td>${formatAngka(xi, decimals)}</td>
+                        <td>${formatAngka(yi, decimals)}</td>
+                        <td>${formatAngka(y1, decimals)}</td>
+                        <td>${formatAngka(res1, decimals)}</td>
+                        <td>${formatAngka(y2, decimals)}</td>
+                        <td>${formatAngka(res2, decimals)}</td>
+                    </tr>
+                `;
+            });
+            
+            return {totalRes1, totalRes2, rows};
+        }
+
+        function formatAngka(num, decimals) {
+            if (typeof num !== 'number' || isNaN(num)) return '-';
+            const factor = Math.pow(10, decimals);
+            const rounded = Math.round(num * factor) / factor;
+            return rounded.toFixed(decimals);
+        }
+
+        function updateHasilBestFit(data) {
+            const hasil = document.getElementById('hasilBestFit');
+            hasil.classList.remove('d-none');
+            
+            document.getElementById('bestFitTableBody').innerHTML = data.rows.join('');
+            document.getElementById('totalRes1').textContent = data.totalRes1.toFixed(data.decimals);
+            document.getElementById('totalRes2').textContent = data.totalRes2.toFixed(data.decimals);
+            
+            let conclusion;
+            if (data.totalRes1 < data.totalRes2) {
+                conclusion = `Model 1 lebih baik (Total Residual: ${data.totalRes1.toFixed(data.decimals)} < ${data.totalRes2.toFixed(data.decimals)})`;
+            } else if (data.totalRes2 < data.totalRes1) {
+                conclusion = `Model 2 lebih baik (Total Residual: ${data.totalRes2.toFixed(data.decimals)} < ${data.totalRes1.toFixed(data.decimals)})`;
+            } else {
+                conclusion = "Kedua model memiliki performa yang sama";
+            }
+            document.getElementById('bestFitConclusion').textContent = conclusion;
+
+            hasil.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(error) {
+            alert(`Error: ${error.message}`);
+            console.error(error);
+        }
+    </script>
+</body>
+</html>
